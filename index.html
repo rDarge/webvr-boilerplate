@@ -94,6 +94,97 @@ WebVRConfig = {
 
 
 <script>
+//Pull out scene preparation from rest of three.js code
+function prepareScene(scene) {
+  create3dObjects(scene);
+  addLighting(scene);
+  addIntersectingTets(scene);
+  addSomeImages(scene);
+}
+
+
+/*
+
+    Helper functions to encapsulate different tests
+
+*/
+
+function create3dObjects(scene) {
+  // Create 3D objects.
+  var tetGeometry = new THREE.TetrahedronGeometry(1);
+  var tetMaterial = new THREE.MeshNormalMaterial();
+  var tet = new THREE.Mesh(tetGeometry, tetMaterial);
+
+  // Position mesh
+  tet.position.set(2, controls.userHeight, -1);
+
+  // Add mesh to your three.js scene
+  scene.add(tet);
+}
+
+function addLighting(scene) {
+  var light = new THREE.AmbientLight( 0x404040 );
+  scene.add( light );
+
+  var light2 = new THREE.PointLight( 0xffffff, 1, 100 );
+  light2.intensity = 1;
+  scene.add( light2 );
+
+  var light3 = new THREE.DirectionalLight( 0xffffff );
+  light3.position.set( 0, 1, 1 ).normalize();
+  scene.add(light3);
+}
+
+function addIntersectingTets(scene) {
+  // create Five Intersecting Tetrahedra:
+  var tetGeometry = new THREE.TetrahedronGeometry(1);
+  var tet = new Array(5);
+  var fit = new THREE.Object3D();
+
+  var t = ((1 + Math.sqrt(5))/2);
+  var fturn = 6.283/5;
+  var axis = new THREE.Vector3( t, 1, 0 );
+  axis.normalize();
+
+  for(var i = 0; i < 5; i++) {
+    tet[i] = new THREE.Mesh(tetGeometry, new THREE.MeshLambertMaterial());
+    tet[i].rotateOnAxis(axis, i*fturn);
+    fit.add(tet[i]);
+  }
+
+  fit.position.set(-2, controls.userHeight+1, -2);
+  scene.add(fit);
+}
+
+function addSomeImages(scene) {
+  // Tip: Use a spherical camera or your phone to capture a spherical photo
+  // Add an equirectangular panorama
+  var pano;
+  var loader = new THREE.TextureLoader();
+  loader.load('img/world.jpg', onTextureLoaded);
+
+  function onTextureLoaded(texture) {
+    var geometry = new THREE.SphereGeometry(1000, 32, 32);
+    var material = new THREE.MeshBasicMaterial({
+      map: texture,
+      side: THREE.BackSide
+    });
+    pano = new THREE.Mesh(geometry, material);
+    pano.position.y = 190;
+    scene.add(pano);
+  }
+}
+
+
+
+/*
+
+
+Boilerplate Three.js code after this, I don't really know what it all does yet
+
+
+*/
+
 // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
 // Only enable it if you actually need to.
 var renderer = new THREE.WebGLRenderer({antialias: true});
@@ -109,7 +200,6 @@ var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
 
 var controls = new THREE.VRControls(camera);
-controls.standing = true;
 controls.standing = true;
 
 // Apply VR stereo rendering to renderer.
@@ -152,16 +242,9 @@ var params = {
 };
 var manager = new WebVRManager(renderer, effect, params);
 
-// Create 3D objects.
-var geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-var material = new THREE.MeshNormalMaterial();
-var cube = new THREE.Mesh(geometry, material);
 
-// Position cube mesh to be right in front of you.
-cube.position.set(0, controls.userHeight, -1);
-
-// Add cube mesh to your three.js scene
-scene.add(cube);
+//Set up all your objects
+prepareScene(scene);
 
 window.addEventListener('resize', onResize, true);
 window.addEventListener('vrdisplaypresentchange', onResize, true);
@@ -173,7 +256,7 @@ function animate(timestamp) {
   lastRender = timestamp;
 
   // Apply rotation to cube mesh
-  cube.rotation.y += delta * 0.0006;
+  // cube.rotation.y += delta * 0.0006;
 
   controls.update();
   // Render the scene through the manager.
@@ -219,7 +302,7 @@ function setStageDimensions(stage) {
   scene.add(skybox);
 
   // Place the cube in the middle of the scene, at user height.
-  cube.position.set(0, controls.userHeight, 0);
+  // cube.position.set(0, controls.userHeight, 0);
 }
 
 </script>
